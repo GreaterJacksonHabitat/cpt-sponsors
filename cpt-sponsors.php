@@ -23,16 +23,22 @@ if ( ! class_exists( 'CPT_Sponsors' ) ) {
 	class CPT_Sponsors {
 		
 		/**
-		 * @var			CPT_Sponsors $plugin_data Holds Plugin Header Info
+		 * @var			array $plugin_data Holds Plugin Header Info
 		 * @since		1.0.0
 		 */
 		public $plugin_data;
 		
 		/**
-		 * @var			CPT_Sponsors $admin_errors Stores all our Admin Errors to fire at once
+		 * @var			array $admin_errors Stores all our Admin Errors to fire at once
 		 * @since		1.0.0
 		 */
 		private $admin_errors;
+		
+		/**
+		 * @var         RBM_CPT_Sponsors Holds our CPT
+		 * @since       1.0.0
+		 */
+		public $cpt;
 
 		/**
 		 * Get active instance
@@ -61,6 +67,18 @@ if ( ! class_exists( 'CPT_Sponsors' ) ) {
 			if ( version_compare( get_bloginfo( 'version' ), '4.4' ) < 0 ) {
 				
 				$this->admin_errors[] = sprintf( _x( '%s requires v%s of %s or higher to be installed!', 'Outdated Dependency Error', 'cpt-sponsors' ), '<strong>' . $this->plugin_data['Name'] . '</strong>', '4.4', '<a href="' . admin_url( 'update-core.php' ) . '"><strong>WordPress</strong></a>' );
+				
+				if ( ! has_action( 'admin_notices', array( $this, 'admin_errors' ) ) ) {
+					add_action( 'admin_notices', array( $this, 'admin_errors' ) );
+				}
+				
+				return false;
+				
+			}
+			
+			if ( ! class_exists( 'RBM_CPTS' ) ) {
+				
+				$this->admin_errors[] = sprintf( __( '%s requires %sRBP CPTs%s to be installed!', 'cpt-sponsors' ), '<strong>' . $this->plugin_data['Name'] . '</strong>', '<a href="https://github.com/realbig/rbm-cpts/" target="_blank">', '</a>' );
 				
 				if ( ! has_action( 'admin_notices', array( $this, 'admin_errors' ) ) ) {
 					add_action( 'admin_notices', array( $this, 'admin_errors' ) );
@@ -162,6 +180,10 @@ if ( ! class_exists( 'CPT_Sponsors' ) ) {
 		 */
 		private function require_necessities() {
 			
+			// CPT functionality
+			require_once __DIR__ . '/core/cpt/class-rbm-cpt-sponsor.php';
+			$this->cpt = new RBM_CPT_Sponsors();
+			
 		}
 		
 		/**
@@ -247,7 +269,7 @@ if ( ! class_exists( 'CPT_Sponsors' ) ) {
  * @since	  1.0.0
  * @return	  \CPT_Sponsors The one true CPT_Sponsors
  */
-add_action( 'plugins_loaded', 'cpt_sponsors_load' );
+add_action( 'plugins_loaded', 'cpt_sponsors_load', 999 );
 function cpt_sponsors_load() {
 
 	require_once __DIR__ . '/core/cpt-sponsors-functions.php';
